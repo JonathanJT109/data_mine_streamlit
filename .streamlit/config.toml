@@ -6,5 +6,3 @@ textColor = "#000000"
 
 [server]
 headless = true
-browserServerAddress = "localhost"
-gatherUsageStats = false
