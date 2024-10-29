@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import base64
 
 indiana_counties = ["Tippecanoe"]
 
@@ -34,10 +35,55 @@ def send_data(house_price, location):
         st.write("Error sending data")
 
 def app():
-    house_price = st.number_input('Enter the house price', min_value=0.0, max_value=1000000.0, value=0.0, step=1000.0)
+    # house_price = st.number_input('Enter the house price', min_value=0.0, max_value=1000000.0, value=0.0, step=1000.0)
+    with open("mag.svg", "r") as svg_file:
+        svg_data = svg_file.read()
+        encoded_svg = base64.b64encode(svg_data.encode()).decode()
+    st.markdown(
+        """
+        <style>
+        /* Target the text input field specifically */
+        input[type="text"]::placeholder {
+            color: #888; /* Change the placeholder text color */
+            font-weight: 500; /* Set placeholder text weight */
+            font-size: 16px; /* Adjust the placeholder font size */
+        }
+
+        /* Additional styles for the input field */
+        input[type="text"] {
+            padding-left: 35px; /* Add space for potential icon */
+            height: 40px; /* Adjust height */
+            border: 2px solid #ddd; /* Custom border style */
+            border-radius: 5px; /* Rounded corners */
+        }
+
+        /* Optional: Add an SVG icon in the text input */
+        .text-input-icon input {
+            background-image: url("data:image/svg+xml;base64,{encoded_svg}");
+            background-repeat: no-repeat;
+            background-position: 10px center; /* Position the SVG icon */
+            background-size: 20px 20px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown('<div class="text-input-icon">', unsafe_allow_html=True)
+    house_price_text = st.text_input("",placeholder="Price")
+    st.markdown('</div>', unsafe_allow_html=True)
+    # Validate that the input is a number
+    try:
+        house_price = float(house_price_text) if house_price_text else 0.0
+        if house_price < 0 or house_price > 1000000:
+            st.error("Price should be between 0 and 1,000,000")
+    except ValueError:
+        st.error("Please enter a valid number")
+        location = st.selectbox("Select the location", indiana_counties, index=None, placeholder="Select a location")
+        search_button = st.button("Search")
+
     location = st.selectbox("Select the location", indiana_counties, index=None, placeholder="Select a location")
     search_button = st.button("Search")
-
     # QUESTION: Use google maps instead?
     st.map(data())
 
@@ -56,8 +102,6 @@ def app():
                 col4.metric("Vacancy Rate", vacancy_rate, "-17%")
                 # st.write(predictions)
         else:
-            st.write("Please enter the house price and select the location")
-
-
+            st.write("Price")
 
 app()
