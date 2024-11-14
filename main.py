@@ -5,12 +5,20 @@ import streamlit as st
 from server import get_counties, get_county_house_value, get_county_rent_rates
 
 indiana_counties = get_counties("IN")
+indiana_counties.sort()
 
 
 def get_test(state: str, county: str):
     hv = get_county_house_value(state, county)
     rr = get_county_rent_rates(state, county)
-    return (hv, rr)
+    # Temporal fix
+    if hv is not None:
+        hv["Prediction"] = False
+        hv.loc[hv.index[-10:], 'Prediction'] = True
+    if rr is not None:
+        rr["Prediction"] = False
+        rr.loc[rr.index[-10:], 'Prediction'] = True
+    return hv, rr
 
 
 def simulate_model_data(location):
@@ -46,9 +54,10 @@ def send_data(location):
 def app():
     location = st.selectbox("Select the location", indiana_counties, index=None, placeholder="Select a location")
     search_button = st.button("Search")
+    warn = st.empty()
 
     # QUESTION: Use google maps instead?
-    st.map(data())
+    # st.map(data())
 
     if search_button:
         if location is not None:
@@ -65,10 +74,18 @@ def app():
                 col4.metric("Vacancy Rate", vacancy_rate, "-17%")
                 # st.write(predictions)
             hv, rr = get_test("IN", location)
-            a = st.line_chart(hv)
-            b = st.line_chart(rr)
+            if hv is not None:
+                st.subheader(f"House Value in {location}")
+                st.line_chart(hv, y=["Value"], color="Prediction", y_label="House Value", x_label="Date")
+            else:
+                st.error("No house value data found for this county.")
+            if rr is not None:
+                st.subheader(f"Rent Rates in {location}")
+                st.line_chart(rr, y=["Value"], color="Prediction", y_label="Rent Rates", x_label="Date")
+            else:
+                st.error("No rent rate data found for this county.")
         else:
-            st.write("Please enter the house price and select the location")
+            warn.warning("\tPlease enter the county you would like to explore.", icon="⚠️")
 
 
 
