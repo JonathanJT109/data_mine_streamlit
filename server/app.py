@@ -18,7 +18,7 @@ def get_counties(state: str):
         FileNotFoundError: If the counties.json file for the state is missing.
         KeyError: If the 'counties' key is not found in the JSON data.
     """
-    path = os.path.join(os.path.dirname(__file__), f'data/{state}/counties.json')
+    path = os.path.join(os.path.dirname(__file__), f"data/{state}/counties.json")
     with open(path, "r") as f:
         state_data = json.load(f)
     return state_data["counties"]
@@ -37,7 +37,7 @@ def get_house_values(state: str):
     Raises:
         FileNotFoundError: If the house_value.csv file for the state is missing.
     """
-    path = os.path.join(os.path.dirname(__file__), f'data/{state}/house_value.csv')
+    path = os.path.join(os.path.dirname(__file__), f"data/{state}/house_value.csv")
     house_values = pd.read_csv(path)
     return house_values
 
@@ -55,9 +55,15 @@ def get_rent_rates(state: str):
     Raises:
         FileNotFoundError: If the rent_rates.csv file for the state is missing.
     """
-    path = os.path.join(os.path.dirname(__file__), f'data/{state}/rent_rates.csv')
+    path = os.path.join(os.path.dirname(__file__), f"data/{state}/rent_rates.csv")
     rent_rates = pd.read_csv(path)
     return rent_rates
+
+
+def get_employment(state: str):
+    path = os.path.join(os.path.dirname(__file__), f"data/{state}/employment.csv")
+    employment = pd.read_csv(path)
+    return employment
 
 
 def get_county_house_value(state: str, county: str):
@@ -80,7 +86,8 @@ def get_county_house_value(state: str, county: str):
 
     # Filter the data for the specified county
     county_house_value = state_house_value.loc[
-        (state_house_value["State"] == state) & (state_house_value["RegionName"] == county)
+        (state_house_value["State"] == state)
+        & (state_house_value["RegionName"] == county)
         ]
 
     # If no data is found for the county, return None
@@ -89,8 +96,19 @@ def get_county_house_value(state: str, county: str):
 
     # Clean the data by dropping unnecessary columns and rows with missing values
     county_house_value = county_house_value.drop(
-        ["RegionID", "SizeRank", "RegionName", "RegionType", "State", "StateName", "Metro",
-         "StateCodeFIPS", "MunicipalCodeFIPS"], axis=1)
+        [
+            "RegionID",
+            "SizeRank",
+            "RegionName",
+            "RegionType",
+            "State",
+            "StateName",
+            "Metro",
+            "StateCodeFIPS",
+            "MunicipalCodeFIPS",
+        ],
+        axis=1,
+    )
     county_house_value.dropna(inplace=True, axis=1)
 
     # Rename the index for clarity
@@ -120,7 +138,7 @@ def get_county_rent_rates(state: str, county: str):
     # Filter the data for the specified county
     county_rent_rate = state_rent_rate.loc[
         (state_rent_rate["State"] == state) & (state_rent_rate["RegionName"] == county)
-        ]
+    ]
 
     # If no data is found for the county, return None
     if county_rent_rate.shape[0] == 0:
@@ -128,8 +146,19 @@ def get_county_rent_rates(state: str, county: str):
 
     # Clean the data by dropping unnecessary columns and rows with missing values
     county_rent_rate = county_rent_rate.drop(
-        ["RegionID", "SizeRank", "RegionName", "RegionType", "State", "StateName", "Metro",
-         "StateCodeFIPS", "MunicipalCodeFIPS"], axis=1)
+        [
+            "RegionID",
+            "SizeRank",
+            "RegionName",
+            "RegionType",
+            "State",
+            "StateName",
+            "Metro",
+            "StateCodeFIPS",
+            "MunicipalCodeFIPS",
+        ],
+        axis=1,
+    )
     county_rent_rate.dropna(inplace=True, axis=1)
 
     # Rename the index for clarity
@@ -137,9 +166,30 @@ def get_county_rent_rates(state: str, county: str):
 
     return county_rent_rate.T
 
+
+def get_county_employment(state: str, county: str):
+    state_employment = get_employment(state)
+    geo = f"{county.split()[0]}, {state}"
+    county_employment = state_employment.loc[state_employment["GeoName"] == geo]
+    county_employment.set_index("Year", inplace=True)
+    county_employment = county_employment.drop("GeoName", axis=1)
+    county_employment.dropna(inplace=True, axis=0)
+
+    if county_employment.shape[0] == 0:
+        return None
+
+    employment = []
+    for col in county_employment.columns:
+        metric = county_employment[col]
+        metric.columns = ["Year", "Value"]
+        employment.append(metric)
+
+    return employment
+
+
 if __name__ == "__main__":
     # counties = get_counties("indiana")
     # print(counties)
-    df = get_county_rent_rates("IN", "Adams County")
-    print(df.head())
-    print(df.tail())
+    df = get_county_employment("IN", "Adams County")
+    for e in df:
+        print(e.head())
