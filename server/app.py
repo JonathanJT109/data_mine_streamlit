@@ -89,7 +89,7 @@ def get_county_house_value(state: str, county: str):
     county_house_value = state_house_value.loc[
         (state_house_value["State"] == state)
         & (state_house_value["RegionName"] == county)
-        ]
+    ]
 
     # If no data is found for the county, return None
     if county_house_value.shape[0] == 0:
@@ -139,7 +139,7 @@ def get_county_rent_rates(state: str, county: str):
     # Filter the data for the specified county
     county_rent_rate = state_rent_rate.loc[
         (state_rent_rate["State"] == state) & (state_rent_rate["RegionName"] == county)
-        ]
+    ]
 
     # If no data is found for the county, return None
     if county_rent_rate.shape[0] == 0:
@@ -196,7 +196,9 @@ def get_county_employment(state: str, county: str):
     if county_employment.shape[0] == 0:
         return None
 
-    county_employment.index = pd.to_datetime(county_employment.index.astype(str), format='%Y')
+    county_employment.index = pd.to_datetime(
+        county_employment.index.astype(str), format="%Y"
+    )
 
     employment = []
     for col in county_employment.columns:
@@ -286,18 +288,23 @@ def get_percent_change(county_info: dict):
     percent_change = {}
     for key, value in county_info.items():
         if value is not None:
-            key_name = key.lower().replace(' ', '_')
+            # key_name = key.lower().replace(" ", "_")
             # (Current Metric, Change in Metric compared to 5 years)
-            percent_change[key_name] = (value.iloc[-1], ((value.iloc[-1] - value.iloc[-5]) / value.iloc[-5] * 100))
+            current = value.iloc[-1]
+            five_ago = value.index.max() - pd.DateOffset(years=5)
+            key_name = f"{key} ({five_ago.year} - {value.index.max().year})"
+            prev_5 = value[value.index >= five_ago].min()
+            percent_change[key_name] = (
+                current,
+                ((current - prev_5) / prev_5 * 100),
+            )
     return percent_change
 
 
 def get_county_owner(state: str, county: str):
     results = open_model("1")
     place_name = f"{county}, Indiana"  # Temporal fix
-    results = results.loc[
-        (results["Place Name"] == place_name)
-    ]
+    results = results.loc[results["Place Name"] == place_name]
 
     if results.shape[0] == 0:
         return None
@@ -306,13 +313,15 @@ def get_county_owner(state: str, county: str):
 
 
 if __name__ == "__main__":
-    results = get_county_owner("IN", "Adams County")
-    print(results["Year"])
+    # results = get_county_owner("IN", "Adams County")
+    # print(results.head())
+    # print(results.columns)
     # counties = get_counties("indiana")
     # print(counties)
     # house = get_county_house_value("IN", "Adams County")
     # print(house)
-    # info = get_county_info("IN", "Adams County")
+    info = get_county_info("IN", "LaPorte")
+    print(info)
     # change = get_percent_change(info)
     # print(change)
     # emp = get_county_employment("IN", "Adams County")

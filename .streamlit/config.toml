@@ -1,4 +1,3 @@
-[theme]
-
 [server]
-headless = true
+headless = false
+runOnSafe = true
